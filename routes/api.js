@@ -1,5 +1,6 @@
 'use strict';
 const mongoose = require('mongoose');
+const querystring = require('node:querystring');
 
 const issueSchema = new mongoose.Schema({
   project: String,
@@ -16,12 +17,28 @@ const issueSchema = new mongoose.Schema({
 let Issues = mongoose.model('Issues', issueSchema);
 
 module.exports = function (app) {
+  //delete all documents of test-project
+  app.delete('/api/issues/delete-testdata', async (req, res) => {
+    try {
+      const deletedCount = await Issues.deleteMany({ project: 'test-project' });
+      res.send(deletedCount);
+    } catch (err) {
+      res.send(err);
+    }
+  });
+
   app
     .route('/api/issues/:project')
 
-    .get(function (req, res) {
-      let project = req.params.project;
-      //send all issues
+    .get(async (req, res) => {
+      //send all issues or filtered by req.query
+      try {
+        const projectName = req.params.project;
+        const issueList = await Issues.find({ project: projectName, ...req.query }, '-project -__v');
+        res.send(issueList);
+      } catch (err) {
+        res.status(500).send(err);
+      }
     })
 
     .post(async (req, res) => {

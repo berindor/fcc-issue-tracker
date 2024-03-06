@@ -243,4 +243,44 @@ suite('Functional Tests', async function () {
         done();
       });
   });
+  test('DEL /api/issues/{project} deletes the issue with given id', function (done) {
+    const idToDelete = idOfTestIssue3;
+    chai
+      .request(server)
+      .keepOpen()
+      .delete('/api/issues/test-project')
+      .send({ _id: idToDelete })
+      .end(async function (err, res) {
+        assert.equal(res.status, 200);
+        assert.deepEqual(res.body, { result: 'successfully deleted', _id: idToDelete });
+        const deletedIssueInDb = await Issues.findById(idToDelete);
+        assert.isNotOk(deletedIssueInDb);
+        done();
+      });
+  });
+  test('DEL /api/issues/{project} with missing id sends error "missing id"', function (done) {
+    chai
+      .request(server)
+      .keepOpen()
+      .delete('/api/issues/test-project')
+      .send({})
+      .end(function (err, res) {
+        assert.equal(res.status, 200);
+        assert.deepEqual(res.body, { error: 'missing _id' });
+        done();
+      });
+  });
+  test('DEL /api/issues/{project} with invalid id sends error "could not delete"', function (done) {
+    const invalidId = 'an invalid id';
+    chai
+      .request(server)
+      .keepOpen()
+      .delete('/api/issues/test-project')
+      .send({ _id: invalidId })
+      .end(function (err, res) {
+        assert.equal(res.status, 500);
+        assert.deepEqual(res.body, { error: 'could not delete', _id: invalidId });
+        done();
+      });
+  });
 });

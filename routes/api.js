@@ -60,12 +60,17 @@ module.exports = function (app) {
         res.status(500).json({ error: 'could not update', _id: idToUpdate });
       }
     })
-    .delete(function (req, res) {
+    .delete(async function (req, res) {
       //delete issue
+      const { _id: idToDelete } = req.body;
       try {
-        const project = req.params.project;
+        if (idToDelete === undefined) {
+          return res.json({ error: 'missing _id' });
+        }
+        await Issues.findByIdAndDelete(idToDelete);
+        res.json({ result: 'successfully deleted', _id: idToDelete });
       } catch (err) {
-        res.status(500).send(err);
+        res.status(500).json({ error: 'could not delete', _id: idToDelete });
       }
     });
 };

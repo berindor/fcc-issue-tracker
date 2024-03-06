@@ -37,8 +37,8 @@ const testIssues = [
   }
 ];
 
-suite('Functional Tests', function () {
-  test('delete all testdata with property {project: "test-project"}', function (done) {
+suite('Functional Tests', async function () {
+  test('DELETE /api/issues/delete-testdata deletes all testdata with property {project: "test-project"}', function (done) {
     chai
       .request(server)
       .keepOpen()
@@ -57,7 +57,9 @@ suite('Functional Tests', function () {
       });
   });
 
-  test('test POST /api/issues/{project} create issue with every field', function (done) {
+  let idOfTestIssue0;
+
+  test('POST /api/issues/{project} creates issue with every field', function (done) {
     chai
       .request(server)
       .keepOpen()
@@ -71,10 +73,11 @@ suite('Functional Tests', function () {
         assert.include(Object.keys(res.body), 'updated_on');
         assert.equal(res.body.open, true);
         assert.isOk(mongoose.Types.ObjectId.isValid(res.body._id));
+        idOfTestIssue0 = res.body._id;
         done();
       });
   });
-  test('test POST /api/issues/{project} create issue with only required fields', function (done) {
+  test('POST /api/issues/{project} creates issue with only required fields', function (done) {
     chai
       .request(server)
       .keepOpen()
@@ -93,7 +96,7 @@ suite('Functional Tests', function () {
         done();
       });
   });
-  test('test POST /api/issues/{project} create issue with missing required field', function (done) {
+  test('POST /api/issues/{project} creates issue with missing required field', function (done) {
     chai
       .request(server)
       .keepOpen()
@@ -105,8 +108,10 @@ suite('Functional Tests', function () {
         done();
       });
   });
-  test('test GET /api/issues/{project} return an array of all issues with all fields', function (done) {
-    const listOfKeys = ['_id', 'issue_title', 'issue_text', 'created_on', 'updated_on', 'created_by', 'assigned_to', 'status_text', 'open'];
+
+  const listOfKeys = ['_id', 'issue_title', 'issue_text', 'created_on', 'updated_on', 'created_by', 'assigned_to', 'status_text', 'open'];
+
+  test('GET /api/issues/{project} returns an array of all issues with all fields', function (done) {
     chai
       .request(server)
       .keepOpen()
@@ -121,7 +126,8 @@ suite('Functional Tests', function () {
         done();
       });
   });
-  test('test GET /api/issues/{project}?key=property return an array of all issues with one {key: property} filter', function (done) {
+  let idOfTestIssue3;
+  test('GET /api/issues/{project}?key=property returns an array of all issues with one {key: property} filter', function (done) {
     chai
       .request(server)
       .keepOpen()
@@ -138,10 +144,11 @@ suite('Functional Tests', function () {
         assert.equal(res.status, 200);
         assert.equal(res.body.length, 1);
         assert.deepInclude(res.body[0], testIssues[3]);
+        idOfTestIssue3 = res.body[0]._id;
+        done();
       });
-    done();
   });
-  test('test GET /api/issues/{project}?key=property return an array of all issues with multiple {key: property} filters', function (done) {
+  test('GET /api/issues/{project}?key=property returns an array of all issues with multiple {key: property} filters', function (done) {
     chai
       .request(server)
       .keepOpen()
@@ -150,7 +157,83 @@ suite('Functional Tests', function () {
         assert.equal(res.status, 200);
         assert.equal(res.body.length, 1);
         assert.deepInclude(res.body[0], testIssues[0]);
+        done();
       });
-    done();
+  });
+  test('PUT /api/issues/{project} updates one field', function (done) {
+    let newIssueObj = { ...testIssues[3] };
+    newIssueObj._id = idOfTestIssue3;
+    const newText = 'new-issue-text';
+    newIssueObj.issue_text = newText;
+    chai
+      .request(server)
+      .keepOpen()
+      .put('/api/issues/test-project')
+      .send({ _id: idOfTestIssue3, issue_text: newText })
+      .end(function (err, res) {
+        assert.equal(res.status, 200);
+        assert.hasAllKeys(res.body, listOfKeys);
+        assert.deepInclude(res.body, newIssueObj);
+        done();
+      });
+  });
+  test('PUT /api/issues/{project} updates multiple fields', function (done) {
+    let newIssueObj = { ...testIssues[3] };
+    newIssueObj._id = idOfTestIssue3;
+    const newText = 'new-issue-text';
+    const newFixer = 'new-issue-fixer';
+    const newSatus = 'new-status-text';
+    newIssueObj.issue_text = newText;
+    newIssueObj.assigned_to = newFixer;
+    newIssueObj.status_text = newSatus;
+    newIssueObj.open = false;
+    chai
+      .request(server)
+      .keepOpen()
+      .put('/api/issues/test-project')
+      .send({ _id: idOfTestIssue3, assigned_to: newFixer, status_text: newSatus, open: false })
+      .end(function (err, res) {
+        assert.equal(res.status, 200);
+        assert.hasAllKeys(res.body, listOfKeys);
+        assert.deepInclude(res.body, newIssueObj);
+        done();
+      });
+  });
+  test('PUT /api/issues/{project} with no fields to update sends error "no update fields sent"', function (done) {
+    chai
+      .request(server)
+      .keepOpen()
+      .put('/api/issues/test-project')
+      .send({ _id: idOfTestIssue0 })
+      .end(function (err, res) {
+        assert.equal(res.status, 200);
+        assert.deepEqual(res.body, { error: 'no update field(s) sent', _id: idOfTestIssue0 });
+        done();
+      });
+  });
+  test('PUT /api/issues/{project} with missing id sends error "missing id"', function (done) {
+    chai
+      .request(server)
+      .keepOpen()
+      .put('/api/issues/test-project')
+      .send({ assigned_to: 'new fixer', status_text: 'new text', open: false })
+      .end(function (err, res) {
+        assert.equal(res.status, 200);
+        assert.deepEqual(res.body, { error: 'missing _id' });
+        done();
+      });
+  });
+  test('PUT /api/issues/{project} with invalid id sends error "could not update"', function (done) {
+    const invalidId = 'an invalid id';
+    chai
+      .request(server)
+      .keepOpen()
+      .put('/api/issues/test-project')
+      .send({ _id: invalidId, assigned_to: 'new fixer', status_text: 'new text', open: false })
+      .end(function (err, res) {
+        assert.equal(res.status, 500);
+        assert.deepEqual(res.body, { error: 'could not update', _id: invalidId });
+        done();
+      });
   });
 });

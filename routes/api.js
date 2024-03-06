@@ -1,6 +1,5 @@
 'use strict';
 const mongoose = require('mongoose');
-const querystring = require('node:querystring');
 
 const issueSchema = new mongoose.Schema({
   project: String,
@@ -29,7 +28,6 @@ module.exports = function (app) {
 
   app
     .route('/api/issues/:project')
-
     .get(async (req, res) => {
       //send all issues or filtered by req.query
       try {
@@ -40,11 +38,10 @@ module.exports = function (app) {
         res.status(500).send(err);
       }
     })
-
     .post(async (req, res) => {
       //create issue
       try {
-        let project = req.params.project;
+        const project = req.params.project;
         let issueInputData = {
           project: project,
           ...req.body
@@ -56,14 +53,37 @@ module.exports = function (app) {
         res.status(500).json({ error: 'required field(s) missing' });
       }
     })
-
-    .put(function (req, res) {
-      let project = req.params.project;
+    .put(async (req, res) => {
       //update issue
+      let { _id: idToUpdate, ...valuesToUpdate } = req.body;
+      try {
+        if (idToUpdate === undefined) {
+          return res.json({ error: 'missing _id' });
+        }
+        if (Object.keys(valuesToUpdate).length === 0) {
+          return res.json({ error: 'no update field(s) sent', _id: idToUpdate });
+        }
+        const findById = await Issues.findById(idToUpdate, '_id', { lean: true });
+        valuesToUpdate.updated_on = new Date();
+        const updatedIssue = await Issues.findByIdAndUpdate(idToUpdate, valuesToUpdate, {
+          returnDocument: 'after',
+          lean: true,
+          select: '-project -__v'
+        });
+        //this is needed, must update tests
+        //res.json({  result: 'successfully updated', '_id': idToUpdate });
+        //not this type of response is needed:
+        res.send(updatedIssue);
+      } catch (err) {
+        res.status(500).json({ error: 'could not update', _id: idToUpdate });
+      }
     })
-
     .delete(function (req, res) {
-      let project = req.params.project;
       //delete issue
+      try {
+        const project = req.params.project;
+      } catch (err) {
+        res.status(500).send(err);
+      }
     });
 };

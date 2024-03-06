@@ -1,19 +1,5 @@
 'use strict';
-const mongoose = require('mongoose');
-
-const issueSchema = new mongoose.Schema({
-  project: String,
-  issue_title: { type: String, required: true },
-  issue_text: { type: String, required: true },
-  created_on: { type: Date, default: new Date() },
-  updated_on: { type: Date, default: new Date() },
-  created_by: { type: String, required: true },
-  assigned_to: { type: String, default: '' },
-  status_text: { type: String, default: '' },
-  open: { type: Boolean, default: true }
-});
-
-let Issues = mongoose.model('Issues', issueSchema);
+const Issues = require('../issue_model.js');
 
 module.exports = function (app) {
   //delete all documents of test-project
@@ -63,17 +49,13 @@ module.exports = function (app) {
         if (Object.keys(valuesToUpdate).length === 0) {
           return res.json({ error: 'no update field(s) sent', _id: idToUpdate });
         }
-        const findById = await Issues.findById(idToUpdate, '_id', { lean: true });
         valuesToUpdate.updated_on = new Date();
-        const updatedIssue = await Issues.findByIdAndUpdate(idToUpdate, valuesToUpdate, {
+        await Issues.findByIdAndUpdate(idToUpdate, valuesToUpdate, {
           returnDocument: 'after',
           lean: true,
           select: '-project -__v'
         });
-        //this is needed, must update tests
-        //res.json({  result: 'successfully updated', '_id': idToUpdate });
-        //not this type of response is needed:
-        res.send(updatedIssue);
+        res.json({ result: 'successfully updated', _id: idToUpdate });
       } catch (err) {
         res.status(500).json({ error: 'could not update', _id: idToUpdate });
       }

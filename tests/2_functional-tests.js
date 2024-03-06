@@ -3,6 +3,7 @@ const chai = require('chai');
 const assert = chai.assert;
 const server = require('../server');
 const mongoose = require('mongoose');
+const Issues = require('../issue_model.js');
 
 chai.use(chaiHttp);
 
@@ -170,10 +171,13 @@ suite('Functional Tests', async function () {
       .keepOpen()
       .put('/api/issues/test-project')
       .send({ _id: idOfTestIssue3, issue_text: newText })
-      .end(function (err, res) {
+      .end(async function (err, res) {
         assert.equal(res.status, 200);
-        assert.hasAllKeys(res.body, listOfKeys);
-        assert.deepInclude(res.body, newIssueObj);
+        assert.deepEqual(res.body, { result: 'successfully updated', _id: idOfTestIssue3 });
+        let updatedIssueInDb = await Issues.findById(idOfTestIssue3, listOfKeys, { lean: true });
+        const idString = updatedIssueInDb._id.toString();
+        updatedIssueInDb._id = idString;
+        assert.deepInclude(updatedIssueInDb, newIssueObj);
         done();
       });
   });
@@ -192,10 +196,13 @@ suite('Functional Tests', async function () {
       .keepOpen()
       .put('/api/issues/test-project')
       .send({ _id: idOfTestIssue3, assigned_to: newFixer, status_text: newSatus, open: false })
-      .end(function (err, res) {
+      .end(async function (err, res) {
         assert.equal(res.status, 200);
-        assert.hasAllKeys(res.body, listOfKeys);
-        assert.deepInclude(res.body, newIssueObj);
+        assert.deepEqual(res.body, { result: 'successfully updated', _id: idOfTestIssue3 });
+        let updatedIssueInDb = await Issues.findById(idOfTestIssue3, listOfKeys, { lean: true });
+        const idString = updatedIssueInDb._id.toString();
+        updatedIssueInDb._id = idString;
+        assert.deepInclude(updatedIssueInDb, newIssueObj);
         done();
       });
   });

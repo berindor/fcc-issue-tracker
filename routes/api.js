@@ -36,7 +36,7 @@ module.exports = function (app) {
         const { project: projValue, __v: vValue, ...issueResponse } = issueInDb;
         res.json(issueResponse);
       } catch (err) {
-        res.status(500).json({ error: 'required field(s) missing' });
+        res.status(500).send({ error: 'required field(s) missing' });
       }
     })
     .put(async (req, res) => {
@@ -57,7 +57,7 @@ module.exports = function (app) {
         });
         res.json({ result: 'successfully updated', _id: idToUpdate });
       } catch (err) {
-        res.status(500).json({ error: 'could not update', _id: idToUpdate });
+        res.status(500).send({ error: 'could not update', _id: idToUpdate });
       }
     })
     .delete(async function (req, res) {
@@ -70,7 +70,7 @@ module.exports = function (app) {
         await Issues.findByIdAndDelete(idToDelete);
         res.json({ result: 'successfully deleted', _id: idToDelete });
       } catch (err) {
-        res.status(500).json({ error: 'could not delete', _id: idToDelete });
+        res.status(500).send({ error: 'could not delete', _id: idToDelete });
       }
     });
 };

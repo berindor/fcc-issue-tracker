@@ -3,7 +3,7 @@ const Issues = require('../issue_model.js');
 
 module.exports = function (app) {
   //delete all documents of test-project
-  app.delete('/api/issues/delete-testdata', async (req, res) => {
+  app.delete('/api/delete-testdata', async (req, res) => {
     try {
       const deletedCount = await Issues.deleteMany({ project: 'test-project' });
       res.send(deletedCount);
@@ -36,7 +36,8 @@ module.exports = function (app) {
         const { project: projValue, __v: vValue, ...issueResponse } = issueInDb;
         res.json(issueResponse);
       } catch (err) {
-        res.status(500).send({ error: 'required field(s) missing' });
+        //something is wrong here
+        res.status(200).send({ error: 'required field(s) missing' });
       }
     })
     .put(async (req, res) => {
@@ -57,7 +58,8 @@ module.exports = function (app) {
         });
         res.json({ result: 'successfully updated', _id: idToUpdate });
       } catch (err) {
-        res.status(500).send({ error: 'could not update', _id: idToUpdate });
+        //something is wrong here: {result, _id} érkezik valahol, ahol {error, _id}kellene
+        res.status(200).send({ error: 'could not update', _id: idToUpdate });
       }
     })
     .delete(async function (req, res) {
@@ -70,7 +72,8 @@ module.exports = function (app) {
         await Issues.findByIdAndDelete(idToDelete);
         res.json({ result: 'successfully deleted', _id: idToDelete });
       } catch (err) {
-        res.status(500).send({ error: 'could not delete', _id: idToDelete });
+        //something is wrong here: {result, _id} érkezik valahol, ahol {error, _id}kellene
+        res.status(200).send({ error: 'could not delete', _id: idToDelete });
       }
     });
 };

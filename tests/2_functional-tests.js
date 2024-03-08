@@ -25,7 +25,6 @@ const testIssues = [
   {
     //[2]
     issue_title: '',
-    issue_text: 'Test-text',
     created_by: 'Test-creator'
   },
   {
@@ -39,11 +38,11 @@ const testIssues = [
 ];
 
 suite('Functional Tests', async function () {
-  test('DELETE /api/issues/delete-testdata deletes all testdata with property {project: "test-project"}', function (done) {
+  test('DELETE /api/delete-testdata deletes all testdata with property {project: "test-project"}', function (done) {
     chai
       .request(server)
       .keepOpen()
-      .delete('/api/issues/delete-testdata')
+      .delete('/api/delete-testdata')
       .end(function (err, res) {
         assert.equal(res.status, 200);
       });
@@ -104,7 +103,7 @@ suite('Functional Tests', async function () {
       .post('/api/issues/test-project')
       .send(testIssues[2])
       .end(function (err, res) {
-        assert.equal(res.status, 500);
+        assert.equal(res.status, 400);
         assert.deepEqual(res.body, { error: 'required field(s) missing' });
         done();
       });
@@ -238,8 +237,25 @@ suite('Functional Tests', async function () {
       .put('/api/issues/test-project')
       .send({ _id: invalidId, assigned_to: 'new fixer', status_text: 'new text', open: false })
       .end(function (err, res) {
-        assert.equal(res.status, 500);
+        assert.equal(res.status, 400);
         assert.deepEqual(res.body, { error: 'could not update', _id: invalidId });
+        done();
+      });
+  });
+  //extra test
+  test('PUT /api/issues/{project} with invalid field does not save the invalid field', function (done) {
+    chai
+      //TODO
+      .request(server)
+      .keepOpen()
+      .put('/api/issues/test-project')
+      .send({ _id: idOfTestIssue3, assigned_to: 'new fixer', new_key: 'some value' })
+      .end(async function (err, res) {
+        assert.equal(res.status, 200);
+        assert.deepEqual(res.body, { result: 'successfully updated', _id: idOfTestIssue3 });
+        let updatedIssueInDb = await Issues.findById(idOfTestIssue3, {}, { lean: true });
+        assert.equal(updatedIssueInDb.assigned_to, 'new fixer');
+        assert.equal(updatedIssueInDb.new_key, undefined);
         done();
       });
   });
@@ -278,7 +294,7 @@ suite('Functional Tests', async function () {
       .delete('/api/issues/test-project')
       .send({ _id: invalidId })
       .end(function (err, res) {
-        assert.equal(res.status, 500);
+        assert.equal(res.status, 400);
         assert.deepEqual(res.body, { error: 'could not delete', _id: invalidId });
         done();
       });

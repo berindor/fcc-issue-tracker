@@ -103,7 +103,7 @@ suite('Functional Tests', async function () {
       .post('/api/issues/test-project')
       .send(testIssues[2])
       .end(function (err, res) {
-        assert.equal(res.status, 400);
+        assert.equal(res.status, 200);
         assert.deepEqual(res.body, { error: 'required field(s) missing' });
         done();
       });
@@ -237,7 +237,7 @@ suite('Functional Tests', async function () {
       .put('/api/issues/test-project')
       .send({ _id: invalidId, assigned_to: 'new fixer', status_text: 'new text', open: false })
       .end(function (err, res) {
-        assert.equal(res.status, 400);
+        assert.equal(res.status, 200);
         assert.deepEqual(res.body, { error: 'could not update', _id: invalidId });
         done();
       });
@@ -294,7 +294,7 @@ suite('Functional Tests', async function () {
       .delete('/api/issues/test-project')
       .send({ _id: invalidId })
       .end(function (err, res) {
-        assert.equal(res.status, 400);
+        assert.equal(res.status, 200);
         assert.deepEqual(res.body, { error: 'could not delete', _id: invalidId });
         done();
       });

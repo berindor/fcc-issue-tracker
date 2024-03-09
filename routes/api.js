@@ -36,7 +36,6 @@ module.exports = function (app) {
         const { project: projValue, __v: vValue, ...issueResponse } = issueInDb;
         res.json(issueResponse);
       } catch (err) {
-        //something is wrong here
         res.status(200).send({ error: 'required field(s) missing' });
       }
     })
@@ -51,14 +50,14 @@ module.exports = function (app) {
           return res.json({ error: 'no update field(s) sent', _id: idToUpdate });
         }
         valuesToUpdate.updated_on = new Date();
-        await Issues.findByIdAndUpdate(idToUpdate, valuesToUpdate, {
+        const updatedIssueInDb = await Issues.findByIdAndUpdate(idToUpdate, valuesToUpdate, {
           returnDocument: 'after',
           lean: true,
           select: '-project -__v'
         });
+        if (updatedIssueInDb === null) return res.status(200).send({ error: 'could not update', _id: idToDelete });
         res.json({ result: 'successfully updated', _id: idToUpdate });
       } catch (err) {
-        //something is wrong here: {result, _id} érkezik valahol, ahol {error, _id}kellene
         res.status(200).send({ error: 'could not update', _id: idToUpdate });
       }
     })
@@ -69,10 +68,10 @@ module.exports = function (app) {
         if (idToDelete === undefined) {
           return res.json({ error: 'missing _id' });
         }
-        await Issues.findByIdAndDelete(idToDelete);
+        const deletedIssue = await Issues.findByIdAndDelete(idToDelete);
+        if (deletedIssue === null) return res.status(200).send({ error: 'could not delete', _id: idToDelete });
         res.json({ result: 'successfully deleted', _id: idToDelete });
       } catch (err) {
-        //something is wrong here: {result, _id} érkezik valahol, ahol {error, _id}kellene
         res.status(200).send({ error: 'could not delete', _id: idToDelete });
       }
     });

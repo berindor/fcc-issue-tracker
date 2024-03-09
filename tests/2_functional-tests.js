@@ -242,10 +242,22 @@ suite('Functional Tests', async function () {
         done();
       });
   });
+  test('PUT /api/issues/{project} with valid id not in db sends error "could not update"', function (done) {
+    const invalidId = new mongoose.Types.ObjectId().toString();
+    chai
+      .request(server)
+      .keepOpen()
+      .put('/api/issues/test-project')
+      .send({ _id: invalidId, assigned_to: 'new fixer', status_text: 'new text', open: false })
+      .end(function (err, res) {
+        assert.equal(res.status, 200);
+        assert.deepEqual(res.body, { error: 'could not update', _id: invalidId });
+        done();
+      });
+  });
   //extra test
   test('PUT /api/issues/{project} with invalid field does not save the invalid field', function (done) {
     chai
-      //TODO
       .request(server)
       .keepOpen()
       .put('/api/issues/test-project')
@@ -288,6 +300,19 @@ suite('Functional Tests', async function () {
   });
   test('DEL /api/issues/{project} with invalid id sends error "could not delete"', function (done) {
     const invalidId = 'an invalid id';
+    chai
+      .request(server)
+      .keepOpen()
+      .delete('/api/issues/test-project')
+      .send({ _id: invalidId })
+      .end(function (err, res) {
+        assert.equal(res.status, 200);
+        assert.deepEqual(res.body, { error: 'could not delete', _id: invalidId });
+        done();
+      });
+  });
+  test('DEL /api/issues/{project} with valid id not in db sends error "could not delete"', function (done) {
+    const invalidId = new mongoose.Types.ObjectId().toString();
     chai
       .request(server)
       .keepOpen()
